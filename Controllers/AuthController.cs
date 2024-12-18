@@ -121,5 +121,73 @@ namespace BackendSis7.Controllers
             double egg=trabaja.SueldoBase;
             return egg;
         }
+        [Authorize]
+        [HttpGet("isapre-desc/{id}")]
+        public async Task<ActionResult<double>> DescuentoIsapre(Guid id)
+        {
+            var trabaja = await _context.Empleados.FindAsync(id);
+            if(trabaja!=null) return NotFound();
+            double egg=0;
+            if(trabaja.AFPNombre=="PROVIDA")
+            {
+                egg=0.5;
+            }
+            if(trabaja.AFPNombre=="MAGISTER")
+            {
+                egg=0.9;
+            }
+            return egg;
+        }
+        [Authorize]
+        [HttpGet("AFP-desc/{id}")]
+        public async Task<ActionResult<double>> DescuentoAFP(Guid id)
+        {
+            var trabaja = await _context.Empleados.FindAsync(id);
+            if(trabaja!=null) return NotFound();
+            double egg=0;
+            if(trabaja.isapreNombre=="CRUZ BLANCA")
+            {
+                egg=0.5;
+            }
+            if(trabaja.isapreNombre=="BANMEDICA")
+            {
+                egg=0.9;
+            }
+            if(trabaja.isapreNombre=="CONSALUD")
+            {
+                egg=0.9;
+            }
+            return egg;
+        }
+        [Authorize]
+        [HttpGet("LeyesSociales/{id}")]
+        public async Task<ActionResult<double>> LeyesSociales(Guid id)
+        {
+            var trabaja = await _context.Empleados.FindAsync(id);
+            if(trabaja!=null) return NotFound();
+            double egg=0;
+            double ham=0;
+            if(trabaja.isapreNombre=="CRUZ BLANCA")
+            {
+                egg=0.5;
+            }
+            if(trabaja.isapreNombre=="BANMEDICA")
+            {
+                egg=0.9;
+            }
+            if(trabaja.isapreNombre=="CONSALUD")
+            {
+                egg=0.9;
+            }
+            if(trabaja.AFPNombre=="PROVIDA")
+            {
+                ham=0.5;
+            }
+            if(trabaja.AFPNombre=="MAGISTER")
+            {
+                ham=0.9;
+            }
+            return egg+ham;
+        }
     }
 }
