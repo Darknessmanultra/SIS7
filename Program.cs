@@ -31,6 +31,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApiDbContext>();
+    dbContext.Database.EnsureCreated();
+    await DbSeeder.SeedAsync(dbContext);
+}
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors(c => c.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());

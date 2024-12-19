@@ -15,6 +15,7 @@ namespace BackendSis7.Models
 
     public class Sueldo
     {
+        [Key]
         public Guid IdTrabajador {get;set;}
         public DateOnly Mes {get;set;}
         public int SueldoBase {get;set;}
