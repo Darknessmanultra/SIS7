@@ -56,7 +56,7 @@ namespace BackendSis7.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult<Empleado>> PostEmpleado([FromBody] EmpleadoDTO dto, SueldoDTO sto)
+        public async Task<ActionResult<Empleado>> PostEmpleado([FromBody] postEmpleadoDTO dto)
         {
             if(await _context.Empleados.FirstOrDefaultAsync(e=>e.nombre==dto.nombre)!=null)
             {
@@ -74,9 +74,9 @@ namespace BackendSis7.Controllers
             var suelo = new Sueldo
             {
                 IdTrabajador=empleo.IdTrabajador,
-                Mes=sto.Mes,
-                SueldoBase=sto.SueldoBase,
-                HorasExtra=sto.HorasExtra
+                Mes=dto.Mes,
+                SueldoBase=dto.SueldoBase,
+                HorasExtra=dto.HorasExtra
             };
             _context.Empleados.Add(empleo);
             _context.Sueldos.Add(suelo);
