@@ -48,11 +48,19 @@ namespace BackendSis7.Controllers
         }
         
         [Authorize]
-        [HttpGet]
+        [HttpGet("empleados")]
         public async Task<ActionResult<IEnumerable<Empleado>>> GetEmpleados()
         {
             var empleados= await _context.Empleados.ToListAsync();
             return empleados;
+        }
+
+        [Authorize]
+        [HttpGet("sueldos")]
+        public async Task<ActionResult<IEnumerable<Sueldo>>> GetSueldos()
+        {
+            var sueldos= await _context.Sueldos.ToListAsync();
+            return sueldos;
         }
 
         [Authorize]
@@ -89,7 +97,7 @@ namespace BackendSis7.Controllers
         public async Task<ActionResult<double>> HorasExtra(Guid id, HorasDTO dto)
         {
             var trabaja = await _context.Empleados.FindAsync(id);
-            if(trabaja!=null) return NotFound();
+            if(trabaja==null) return NotFound();
             var money = await _context.Sueldos.FindAsync(id);
             double gratis=(1.5*money.SueldoBase*money.HorasExtra*dto.Weekdays)/(dto.Monthdays*dto.Weekhours);
             return gratis;
@@ -99,7 +107,7 @@ namespace BackendSis7.Controllers
         public async Task<ActionResult<double>> Gratificacion(Guid id)
         {
             var trabaja = await _context.Empleados.FindAsync(id);
-            if(trabaja!=null) return NotFound();
+            if(trabaja==null) return NotFound();
             var money = await _context.Sueldos.FindAsync(id);
             string tipo=trabaja.tipoContrato;
             double gratis=0;
@@ -118,8 +126,8 @@ namespace BackendSis7.Controllers
         public async Task<ActionResult<double>> TotalHaberes(Guid id)
         {
             var trabaja = await _context.Sueldos.FindAsync(id);
-            if(trabaja!=null) return NotFound();
-            double egg=trabaja.SueldoBase;
+            if(trabaja==null) return NotFound();
+            double egg=trabaja.SueldoFinal+trabaja.SueldoBase;
             return egg;
         }
         [Authorize]
@@ -188,6 +196,57 @@ namespace BackendSis7.Controllers
             {
                 ham=0.9;
             }
+            var suelo = await _context.Sueldos.FindAsync(id);
+            suelo.SueldoFinal*=(egg+ham);
+            _context.Sueldos.Update(suelo);
+            await _context.SaveChangesAsync();
+            return egg+ham;
+        }
+
+        [Authorize]
+        [HttpGet("SueldoFinal/{id}")]
+        public async Task<ActionResult<double>> SueldoFinal(Guid id,HorasDTO dto)
+        {
+            var trabaja = await _context.Empleados.FindAsync(id);
+            if(trabaja==null) return NotFound();
+            var money = await _context.Sueldos.FindAsync(id);
+            double gratis=(1.5*money.SueldoBase*money.HorasExtra*dto.Weekdays)/(dto.Monthdays*dto.Weekhours);
+            double gratis2=0;
+            string tipo=trabaja.tipoContrato;
+            if(money.SueldoBase>400000 &&trabaja.CargasFamiliares>2 && tipo=="INDEFINIDO")
+            {
+                gratis=money.SueldoBase*0.25;
+            }
+            if(money.SueldoBase<400000 || money.HorasExtra<10 || tipo=="PLAZO")
+            {
+                gratis=money.SueldoBase*0.15;
+            }
+            double egger=money.SueldoBase+gratis+gratis2;
+            double egg=0;
+            double ham=0;
+            if(trabaja.isapreNombre=="CRUZ BLANCA")
+            {
+                egg=0.5;
+            }
+            if(trabaja.isapreNombre=="BANMEDICA")
+            {
+                egg=0.9;
+            }
+            if(trabaja.isapreNombre=="CONSALUD")
+            {
+                egg=0.9;
+            }
+            if(trabaja.AFPNombre=="PROVIDA")
+            {
+                ham=0.5;
+            }
+            if(trabaja.AFPNombre=="MAGISTER")
+            {
+                ham=0.9;
+            }
+            money.SueldoFinal= egger*(egg+ham);
+            _context.Sueldos.Update(money);
+            await _context.SaveChangesAsync();
             return egg+ham;
         }
     }

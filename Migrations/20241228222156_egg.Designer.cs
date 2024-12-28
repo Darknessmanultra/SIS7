@@ -3,6 +3,7 @@ using System;
 using BackendSis7.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BackendSis7.Migrations
 {
     [DbContext(typeof(ApiDbContext))]
-    partial class ApiDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241228222156_egg")]
+    partial class egg
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
@@ -80,8 +83,8 @@ namespace BackendSis7.Migrations
                     b.Property<int>("SueldoBase")
                         .HasColumnType("INTEGER");
 
-                    b.Property<double>("SueldoFinal")
-                        .HasColumnType("REAL");
+                    b.Property<int>("SueldoFinal")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("IdTrabajador");
 

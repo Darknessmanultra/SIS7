@@ -20,5 +20,6 @@ namespace BackendSis7.Models
         public DateOnly Mes {get;set;}
         public int SueldoBase {get;set;}
         public int HorasExtra{get;set;}
+        public double SueldoFinal{get;set;} =-1;
     }
 }
