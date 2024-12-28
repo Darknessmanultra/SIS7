@@ -30,17 +30,18 @@ namespace BackendSis7.Controllers
         {
         var user = _context.Admin.Find(loginUser.email);
 
-        if (user == null||!BCrypt.Net.BCrypt.Verify(loginUser.password,user.passwordHash)) return Unauthorized();
+        if (user==null) return NotFound();
+        if (!BCrypt.Net.BCrypt.Verify(loginUser.password,user.passwordHash)) return Unauthorized();
 
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes("YourSuperSecretKey");
+        var key = Encoding.UTF8.GetBytes("Proton-Enhanced_Nuclear_Induction_Spectroscopy");
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Email, user.email) }),
             Expires = DateTime.UtcNow.AddHours(1),
             Issuer = "YourIssuer",
             Audience = "YourAudience",
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return Ok(new { Token = tokenHandler.WriteToken(token) });
