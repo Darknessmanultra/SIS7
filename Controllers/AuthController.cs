@@ -26,17 +26,17 @@ namespace BackendSis7.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] Administrador loginUser)
+        public IActionResult Login([FromBody] AdminDTO loginUser)
         {
-        var user = _context.Admin.SingleOrDefault(u => u.nombre == loginUser.nombre && u.passwordHash == loginUser.passwordHash);
+        var user = _context.Admin.Find(loginUser.email);
 
-        if (user == null) return Unauthorized();
+        if (user == null||!BCrypt.Net.BCrypt.Verify(loginUser.password,user.passwordHash)) return Unauthorized();
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes("YourSuperSecretKey");
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, user.nombre) }),
+            Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Email, user.email) }),
             Expires = DateTime.UtcNow.AddHours(1),
             Issuer = "YourIssuer",
             Audience = "YourAudience",
