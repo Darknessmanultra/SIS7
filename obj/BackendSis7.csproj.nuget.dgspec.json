@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "D:\\s\\segundo semestre 2024\\proyecto integrador software\\SIS7\\BackendSis7\\BackendSis7.csproj": {}
+    "C:\\Users\\fran_\\Documents\\PIS\\Backend\\SIS7\\BackendSis7.csproj": {}
   },
   "projects": {
-    "D:\\s\\segundo semestre 2024\\proyecto integrador software\\SIS7\\BackendSis7\\BackendSis7.csproj": {
+    "C:\\Users\\fran_\\Documents\\PIS\\Backend\\SIS7\\BackendSis7.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\s\\segundo semestre 2024\\proyecto integrador software\\SIS7\\BackendSis7\\BackendSis7.csproj",
+        "projectUniqueName": "C:\\Users\\fran_\\Documents\\PIS\\Backend\\SIS7\\BackendSis7.csproj",
         "projectName": "BackendSis7",
-        "projectPath": "D:\\s\\segundo semestre 2024\\proyecto integrador software\\SIS7\\BackendSis7\\BackendSis7.csproj",
-        "packagesPath": "C:\\Users\\ivans\\.nuget\\packages\\",
-        "outputPath": "D:\\s\\segundo semestre 2024\\proyecto integrador software\\SIS7\\BackendSis7\\obj\\",
+        "projectPath": "C:\\Users\\fran_\\Documents\\PIS\\Backend\\SIS7\\BackendSis7.csproj",
+        "packagesPath": "C:\\Users\\fran_\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\fran_\\Documents\\PIS\\Backend\\SIS7\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\ivans\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\fran_\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -48,6 +48,10 @@
             "BCrypt.Net-Next": {
               "target": "Package",
               "version": "[4.0.3, )"
+            },
+            "EPPlus": {
+              "target": "Package",
+              "version": "[7.5.2, )"
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
@@ -95,7 +99,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

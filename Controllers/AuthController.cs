@@ -47,7 +47,7 @@ namespace BackendSis7.Controllers
         return Ok(new { Token = tokenHandler.WriteToken(token) });
         }
         
-        [Authorize]
+        
         [HttpGet("empleados")]
         public async Task<ActionResult<IEnumerable<Empleado>>> GetEmpleados()
         {
@@ -55,199 +55,258 @@ namespace BackendSis7.Controllers
             return empleados;
         }
 
-        [Authorize]
-        [HttpGet("sueldos")]
-        public async Task<ActionResult<IEnumerable<Sueldo>>> GetSueldos()
+        
+        [HttpGet("sueldos/{year}/{month}")]
+        public async Task<ActionResult<IEnumerable<Sueldo>>> GetSueldos(int year, int month)
         {
-            var sueldos= await _context.Sueldos.ToListAsync();
-            return sueldos;
+            var sueldos = await _context.Sueldos
+                .Where(s => s.Mes.Year == year && s.Mes.Month == month)
+                .ToListAsync();
+
+            if (!sueldos.Any()) return NotFound("No se encontraron registros para el mes y año especificados.");
+
+            return Ok(sueldos);
         }
 
-        [Authorize]
-        [HttpPost]
-        public async Task<ActionResult<Empleado>> PostEmpleado([FromBody] postEmpleadoDTO dto)
+        [HttpPost("Registrar")]
+        public async Task<ActionResult> PostEmpleado([FromBody] postEmpleadoDTO dto)
         {
-            if(await _context.Empleados.FirstOrDefaultAsync(e=>e.nombre==dto.nombre)!=null)
+            // Validar datos
+            if (dto == null)
             {
-                return BadRequest("Nombre ya utilizado");
+                return BadRequest("Los datos del empleado son inválidos.");
             }
+
+            // Crear la entidad Empleado
             var empleo = new Empleado
             {
-                IdTrabajador=Guid.NewGuid(),
-                nombre=dto.nombre,
-                CargasFamiliares=dto.CargasFamiliares,
-                isapreNombre=dto.isapreNombre,
-                AFPNombre=dto.AFPNombre,
-                tipoContrato=dto.tipoContrato
+                IdTrabajador = Guid.NewGuid(),
+                nombre = dto.Nombre,
+                CargasFamiliares = dto.CargasFamiliares,
+                isapreNombre = dto.IsapreNombre,
+                AFPNombre = dto.AFPNombre,
+                tipoContrato = dto.TipoContrato
             };
-            var suelo = new Sueldo
+
+            // Crear la entidad Sueldo
+            var sueldo = new Sueldo
             {
-                IdTrabajador=empleo.IdTrabajador,
-                Mes=dto.Mes,
-                SueldoBase=dto.SueldoBase,
-                HorasExtra=dto.HorasExtra
+                IdTrabajador = empleo.IdTrabajador,
+                Mes = dto.Mes,
+                SueldoBase = dto.SueldoBase,
+                HorasExtra = dto.HorasExtra,
+                SueldoFinal = 0 // Inicializar SueldoFinal
             };
-            _context.Empleados.Add(empleo);
-            _context.Sueldos.Add(suelo);
-            await _context.SaveChangesAsync();
-            return Created();
-        }
-        [Authorize]
-        [HttpGet("HorasExtra/{id}")]
-        public async Task<ActionResult<double>> HorasExtra(Guid id, HorasDTO dto)
-        {
-            var trabaja = await _context.Empleados.FindAsync(id);
-            if(trabaja==null) return NotFound();
-            var money = await _context.Sueldos.FindAsync(id);
-            double gratis=(1.5*money.SueldoBase*money.HorasExtra*dto.Weekdays)/(dto.Monthdays*dto.Weekhours);
-            return gratis;
-        }
-        [Authorize]
-        [HttpGet("gratificacion/{id}")]
-        public async Task<ActionResult<double>> Gratificacion(Guid id)
-        {
-            var trabaja = await _context.Empleados.FindAsync(id);
-            if(trabaja==null) return NotFound();
-            var money = await _context.Sueldos.FindAsync(id);
-            string tipo=trabaja.tipoContrato;
-            double gratis=0;
-            if(money.SueldoBase>400000 &&trabaja.CargasFamiliares>2 && tipo=="INDEFINIDO")
+
+            try
             {
-                gratis=money.SueldoBase*0.25;
+                // Guardar en la base de datos
+                _context.Empleados.Add(empleo);
+                _context.Sueldos.Add(sueldo);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(PostEmpleado), new { id = empleo.IdTrabajador }, empleo);
             }
-            if(money.SueldoBase<400000 || money.HorasExtra<10 || tipo=="PLAZO")
+            catch (Exception ex)
             {
-                gratis=money.SueldoBase*0.15;
+                // Manejar errores
+                return StatusCode(500, $"Ocurrió un error al registrar el empleado: {ex.Message}");
             }
-            return gratis;
-        }
-        [Authorize]
-        [HttpGet("haberes/{id}")]
-        public async Task<ActionResult<double>> TotalHaberes(Guid id)
-        {
-            var trabaja = await _context.Sueldos.FindAsync(id);
-            if(trabaja==null) return NotFound();
-            double egg=trabaja.SueldoFinal+trabaja.SueldoBase;
-            return egg;
-        }
-        [Authorize]
-        [HttpGet("isapre-desc/{id}")]
-        public async Task<ActionResult<double>> DescuentoIsapre(Guid id)
-        {
-            var trabaja = await _context.Empleados.FindAsync(id);
-            if(trabaja!=null) return NotFound();
-            double egg=0;
-            if(trabaja.AFPNombre=="PROVIDA")
-            {
-                egg=0.5;
-            }
-            if(trabaja.AFPNombre=="MAGISTER")
-            {
-                egg=0.9;
-            }
-            return egg;
-        }
-        [Authorize]
-        [HttpGet("AFP-desc/{id}")]
-        public async Task<ActionResult<double>> DescuentoAFP(Guid id)
-        {
-            var trabaja = await _context.Empleados.FindAsync(id);
-            if(trabaja!=null) return NotFound();
-            double egg=0;
-            if(trabaja.isapreNombre=="CRUZ BLANCA")
-            {
-                egg=0.5;
-            }
-            if(trabaja.isapreNombre=="BANMEDICA")
-            {
-                egg=0.9;
-            }
-            if(trabaja.isapreNombre=="CONSALUD")
-            {
-                egg=0.9;
-            }
-            return egg;
-        }
-        [Authorize]
-        [HttpGet("LeyesSociales/{id}")]
-        public async Task<ActionResult<double>> LeyesSociales(Guid id)
-        {
-            var trabaja = await _context.Empleados.FindAsync(id);
-            if(trabaja!=null) return NotFound();
-            double egg=0;
-            double ham=0;
-            if(trabaja.isapreNombre=="CRUZ BLANCA")
-            {
-                egg=0.5;
-            }
-            if(trabaja.isapreNombre=="BANMEDICA")
-            {
-                egg=0.9;
-            }
-            if(trabaja.isapreNombre=="CONSALUD")
-            {
-                egg=0.9;
-            }
-            if(trabaja.AFPNombre=="PROVIDA")
-            {
-                ham=0.5;
-            }
-            if(trabaja.AFPNombre=="MAGISTER")
-            {
-                ham=0.9;
-            }
-            var suelo = await _context.Sueldos.FindAsync(id);
-            suelo.SueldoFinal*=(egg+ham);
-            _context.Sueldos.Update(suelo);
-            await _context.SaveChangesAsync();
-            return egg+ham;
         }
 
-        [Authorize]
-        [HttpGet("SueldoFinal/{id}")]
-        public async Task<ActionResult<double>> SueldoFinal(Guid id,HorasDTO dto)
+        [HttpGet("SueldoFinal/{year}/{month}")]
+        public async Task<ActionResult<IEnumerable<object>>> GetSueldoFinal(int year, int month)
         {
-            var trabaja = await _context.Empleados.FindAsync(id);
-            if(trabaja==null) return NotFound();
-            var money = await _context.Sueldos.FindAsync(id);
-            double gratis=(1.5*money.SueldoBase*money.HorasExtra*dto.Weekdays)/(dto.Monthdays*dto.Weekhours);
-            double gratis2=0;
-            string tipo=trabaja.tipoContrato;
-            if(money.SueldoBase>400000 &&trabaja.CargasFamiliares>2 && tipo=="INDEFINIDO")
+            var sueldos = await _context.Sueldos
+                .Where(s => s.Mes.Year == year && s.Mes.Month == month)
+                .ToListAsync();
+
+            if (!sueldos.Any()) return NotFound("No se encontraron registros para el mes y año especificados.");
+
+            var resultados = new List<object>();
+
+            foreach (var sueldo in sueldos)
             {
-                gratis=money.SueldoBase*0.25;
+                var empleado = await _context.Empleados.FindAsync(sueldo.IdTrabajador);
+                if (empleado == null) continue;
+
+                // 1. Calcular Horas Extras
+                double horasExtras = (1.5 * sueldo.SueldoBase * sueldo.HorasExtra * 5) / (30 * 40);
+
+                // 2. Calcular Gratificación
+                double gratificacion = 0;
+                if (empleado.tipoContrato == "INDEFINIDO" && sueldo.SueldoBase >= 400000 && empleado.CargasFamiliares > 2)
+                {
+                    gratificacion = sueldo.SueldoBase * 0.25;
+                }
+                else if (empleado.tipoContrato == "PLAZO" || sueldo.SueldoBase < 400000 || sueldo.HorasExtra < 10)
+                {
+                    gratificacion = sueldo.SueldoBase * 0.15;
+                }
+
+                // 3. Total de Haberes
+                double totalHaberes = sueldo.SueldoBase + horasExtras + gratificacion;
+
+                // 4. Descuento AFP
+                double descuentoAFP = empleado.AFPNombre switch
+                {
+                    "MODELO" => 0.07,
+                    "PROVIDA" => 0.05,
+                    "HABITAT" => 0.06,
+                    "CAPITAL" => 0.08,
+                    "PLANVITAL" => 0.075,
+                    _ => 0.07
+                };
+
+                // 5. Descuento Isapre
+                double descuentoIsapre = empleado.isapreNombre switch
+                {
+                    "FONASA" => 0.07,
+                    "CONSALUD" => 0.09,
+                    "BANMEDICA" => 0.09,
+                    "CRUZ BLANCA" => 0.05,
+                    _ => 0.07
+                };
+
+                // 6. Leyes Sociales
+                double leyesSociales = descuentoAFP + descuentoIsapre;
+
+                // Sueldo Final
+                sueldo.SueldoFinal = (int)(totalHaberes * (1 - leyesSociales));
+
+                // Actualizar en la base de datos
+                _context.Sueldos.Update(sueldo);
+                await _context.SaveChangesAsync();
+
+                resultados.Add(new
+                {
+                    Empleado = empleado.nombre,
+                    SueldoBase = sueldo.SueldoBase,
+                    HorasExtras = horasExtras,
+                    Gratificacion = gratificacion,
+                    TotalHaberes = totalHaberes,
+                    LeyesSociales = leyesSociales,
+                    SueldoFinal = sueldo.SueldoFinal
+                });
             }
-            if(money.SueldoBase<400000 || money.HorasExtra<10 || tipo=="PLAZO")
-            {
-                gratis=money.SueldoBase*0.15;
-            }
-            double egger=money.SueldoBase+gratis+gratis2;
-            double egg=0;
-            double ham=0;
-            if(trabaja.isapreNombre=="CRUZ BLANCA")
-            {
-                egg=0.5;
-            }
-            if(trabaja.isapreNombre=="BANMEDICA")
-            {
-                egg=0.9;
-            }
-            if(trabaja.isapreNombre=="CONSALUD")
-            {
-                egg=0.9;
-            }
-            if(trabaja.AFPNombre=="PROVIDA")
-            {
-                ham=0.5;
-            }
-            if(trabaja.AFPNombre=="MAGISTER")
-            {
-                ham=0.9;
-            }
-            money.SueldoFinal= egger*(egg+ham);
-            _context.Sueldos.Update(money);
-            await _context.SaveChangesAsync();
-            return egg+ham;
+
+            return Ok(resultados);
         }
+
+        [HttpPost("Excel/{year}/{month}")]
+        public async Task<IActionResult> ImportarExcel(IFormFile file, int year, int month)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No se ha proporcionado un archivo.");
+            }
+            try
+            {
+                // Validar año y mes
+                if (year < 1 || month < 1 || month > 12)
+                {
+                    return BadRequest("El año o mes proporcionado no son válidos.");
+                }
+
+                using (var stream = new MemoryStream())
+                {
+                    await file.CopyToAsync(stream);
+                    using (var package = new OfficeOpenXml.ExcelPackage(stream))
+                    {
+                        var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+                        if (worksheet == null)
+                        {
+                            return BadRequest("El archivo Excel no contiene hojas.");
+                        }
+
+                        // Verificar nombres de columnas requeridas
+                        var columnasRequeridas = new List<string>
+                        {
+                            "NOMBRE",
+                            "CONTRATO EMPLEADO",
+                            "SUELDO BASE",
+                            "CANTIDAD HRS. EXTRAS",
+                            "CARGAS FAMILIARES",
+                            "A.F.P",
+                            "ISAPRE"
+                        };
+
+                        var columnasEnExcel = new Dictionary<string, int>();
+                        for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
+                        {
+                            var columna = worksheet.Cells[1, col].Text.Trim();
+                            if (columnasRequeridas.Contains(columna.ToUpper()))
+                            {
+                                columnasEnExcel[columna.ToUpper()] = col;
+                            }
+                        }
+
+                        var columnasFaltantes = columnasRequeridas.Except(columnasEnExcel.Keys).ToList();
+                        if (columnasFaltantes.Any())
+                        {
+                            return BadRequest($"Faltan las siguientes columnas en el archivo Excel: {string.Join(", ", columnasFaltantes)}");
+                        }
+
+                        // Procesar filas y registrar empleados
+                        for (int row = 2; row <= worksheet.Dimension.End.Row; row++)
+                        {
+                            var nombre = worksheet.Cells[row, columnasEnExcel["NOMBRE"]].Text.Trim();
+                            var contrato = worksheet.Cells[row, columnasEnExcel["CONTRATO EMPLEADO"]].Text.Trim().ToUpper();
+                            var sueldoBase = worksheet.Cells[row, columnasEnExcel["SUELDO BASE"]].Text.Trim();
+                            var horasExtras = worksheet.Cells[row, columnasEnExcel["CANTIDAD HRS. EXTRAS"]].Text.Trim();
+                            var cargasFamiliares = worksheet.Cells[row, columnasEnExcel["CARGAS FAMILIARES"]].Text.Trim();
+                            var afp = worksheet.Cells[row, columnasEnExcel["A.F.P"]].Text.Trim();
+                            var isapre = worksheet.Cells[row, columnasEnExcel["ISAPRE"]].Text.Trim();
+
+                            // Validaciones de los campos
+                            if (string.IsNullOrEmpty(nombre) ||
+                                !new[] { "PLAZO", "INDEFINIDO" }.Contains(contrato) ||
+                                !int.TryParse(sueldoBase, out int sueldo) || sueldo <= 0 ||
+                                !int.TryParse(horasExtras, out int horas) || horas < 0 ||
+                                !int.TryParse(cargasFamiliares, out int cargas) || cargas < 0 ||
+                                string.IsNullOrEmpty(afp) ||
+                                string.IsNullOrEmpty(isapre))
+                            {
+                                return BadRequest($"Error en los datos de la fila {row}. Verifique que todos los campos cumplan con los requisitos.");
+                            }
+
+                            // Crear entidad Empleado
+                            var empleado = new Empleado
+                            {
+                                IdTrabajador = Guid.NewGuid(),
+                                nombre = nombre,
+                                CargasFamiliares = cargas,
+                                isapreNombre = isapre,
+                                AFPNombre = afp,
+                                tipoContrato = contrato
+                            };
+
+                            // Crear entidad Sueldo
+                            var dia = DateTime.Now.Day; // Tomar el día actual
+                            var sueldoEntidad = new Sueldo
+                            {
+                                IdTrabajador = empleado.IdTrabajador,
+                                Mes = new DateOnly(year, month, dia), // Convertir a DateOnly
+                                SueldoBase = sueldo,
+                                HorasExtra = horas,
+                                SueldoFinal = 0 // Inicializado, se calculará después
+                            };
+                            // Guardar en la base de datos
+                            _context.Empleados.Add(empleado);
+                            _context.Sueldos.Add(sueldoEntidad);
+                        }
+
+                        await _context.SaveChangesAsync();
+                        return Ok("Los datos del archivo Excel se han importado y registrado correctamente.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Ocurrió un error al procesar el archivo: {ex.Message}");
+            }
+        }
+
+
     }
 }
